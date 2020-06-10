@@ -14,8 +14,3 @@ release.sh
 *.DotSettings.user
 deploy
 .ionide/
-.paket/
-.fake/
-build/
-src/Client/deploy
-*.user
