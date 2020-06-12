@@ -19,7 +19,7 @@ let tryGetEnv key =
 
 let publicPath = Path.GetFullPath "../Client/public"
 
-let port =
+let port = 
     "SERVER_PORT"
     |> tryGetEnv |> Option.map uint16 |> Option.defaultValue 8085us
 
@@ -92,13 +92,15 @@ let webApp actor = router {
 }
 
 let app actor = application {
-    url ("http://0.0.0.0:" + port.ToString() + "/")
+    url ("https://0.0.0.0:" + port.ToString() + "/")
+    force_ssl
     use_router (webApp actor)
     memory_cache
     use_jwt_authentication secret issuer
     use_static publicPath
     use_json_serializer(Thoth.Json.Giraffe.ThothSerializer())
     use_gzip
+
 }
 
 let actor = orderActor()
