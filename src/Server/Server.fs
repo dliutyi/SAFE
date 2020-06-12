@@ -41,16 +41,20 @@ type Auth =
 
 type AuthData = { Token: JWT }
 
+type OrderIDsList =
+    {
+        OrderIDs: string list
+    }
+
 let apiRouter (actor: IOrderActor) =
     let secured = router {
         pipe_through (Saturn.Auth.requireAuthentication Saturn.ChallengeType.JWT)
-        post "/api/order" (fun next ctx ->
+        post "/api/orders" (fun next ctx ->
             task {
-                use stream = new StreamReader(ctx.Request.Body)
-                let! orderId = stream.ReadToEndAsync()
-                printfn "We've received %s" orderId
+                let! orderIdsList = ctx.BindJsonAsync<OrderIDsList>()
+                printfn "We've received %A" orderIdsList
 
-                let! result = actor.PostOrderID orderId
+                let! result = actor.PostOrderIDs orderIdsList.OrderIDs
                 match result with
                 | PostOrderIDResult.Successful ->
                     return! text "Ok" next ctx

@@ -91,7 +91,7 @@ Target.create "Run" (fun _ ->
     }
     let browser = async {
         do! Async.Sleep 5000
-        openBrowser "http://localhost:8080"
+        openBrowser "https://localhost:8080"
     }
 
     let vsCodeSession = Environment.hasEnvironVar "vsCodeSession"

@@ -27,7 +27,7 @@ var CONFIG = {
         // redirect requests that start with /api/ to the server on port 8085
         '/api/**': {
             target: 'https://localhost:' + (process.env.SERVER_PROXY_PORT || "8085"),
-               secure: true,
+               secure: false,
                changeOrigin: true
            },
         // redirect websocket requests that start with /socket/ to the server on the port 8085
@@ -116,7 +116,8 @@ module.exports = {
         port: CONFIG.devServerPort,
         proxy: CONFIG.devServerProxy,
         hot: true,
-        inline: true
+        inline: true,
+        https: true
     },
     // - fable-loader: transforms F# into JS
     // - babel-loader: transforms JS to old syntax (compatible with old browsers)

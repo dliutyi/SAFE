@@ -13,12 +13,12 @@ type GetOrderIDsResult =
     | Failed
 
 type OrderActorMsg =
-    | PostOrderID of orderId: string *  AsyncReplyChannel<PostOrderIDResult>
+    | PostOrderIDs of orderId: string list *  AsyncReplyChannel<PostOrderIDResult>
     | GetOrderIDs of AsyncReplyChannel<GetOrderIDsResult>
 
 type IOrderActor =
     inherit IDisposable
-    abstract PostOrderID : string -> Async<PostOrderIDResult>
+    abstract PostOrderIDs : string list -> Async<PostOrderIDResult>
     abstract GetOrderIDs : unit -> Async<GetOrderIDsResult>
 
 let orderActor () =
@@ -26,9 +26,11 @@ let orderActor () =
         let rec loop(orders: string list) = async {
             let! msg = inbox.Receive()
             match msg with
-            | PostOrderID (orderId, reply) ->
+            | PostOrderIDs (orderIds, reply) ->
                 PostOrderIDResult.Successful |> reply.Reply
-                return! loop (orderId :: orders)
+                let uniqueOrderIds = orderIds |> List.filter (fun orderId -> orders |> List.contains orderId |> not )
+                printfn "Unique Order IDs %A" uniqueOrderIds
+                return! loop (orders |> List.append uniqueOrderIds)
             | GetOrderIDs reply ->
                 orders |> List.toArray |> GetOrderIDsResult.Successful |> reply.Reply 
                 return! loop orders
@@ -38,7 +40,7 @@ let orderActor () =
     router.Start()
     {
         new IOrderActor with
-            member __.PostOrderID orderId = router.PostAndAsyncReply (fun reply -> PostOrderID (orderId, reply))
+            member __.PostOrderIDs orderIds = router.PostAndAsyncReply (fun reply -> PostOrderIDs (orderIds, reply))
             member __.GetOrderIDs () = router.PostAndAsyncReply (fun reply -> GetOrderIDs reply)
             member __.Dispose () =
                 subscription.Dispose()
