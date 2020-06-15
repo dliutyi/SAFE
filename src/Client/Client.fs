@@ -15,7 +15,12 @@ open Fable.FontAwesome
 type Model = {
     OrderIDs: string list
     SecretString: string
+    JsonOrderIDs: string
     Token: string
+}
+
+type OrderIDsList = {
+    OrderIDs: string list
 }
 
 type Auth = {
@@ -32,12 +37,15 @@ type Msg =
     | SetSecretString of string
     | TryToAuth
     | Authed of AuthData
+    | SetOrderIds of string
+    | AddOrderIds
+    | AddedOrdersIds of string
     | Error of exn
 
 let initialOrderIDs () = Fetch.fetchAs<unit, string list> "/api/orders"
 
 let authUser secretString = promise {
-    let body = Encode.Auto.toString(0, { AUTHSTR = secretString} )
+    let body = Encode.Auto.toString(0, { AUTHSTR = secretString } )
     let props = [
         Method HttpMethod.POST
         Fetch.requestHeaders [ ContentType "application/json" ]
@@ -52,10 +60,29 @@ let authUser secretString = promise {
         return! failwithf "Could not authenticate user."
 }
 
+let postOrders (jwt, jsonOrderIds) = promise {
+    let body = sprintf "{ \"OrderIDs\": [%s] }" jsonOrderIds
+    let props = [
+        Method HttpMethod.POST
+        Fetch.requestHeaders [
+            Authorization ("Bearer " + jwt)
+            ContentType "application/json"
+        ]
+        Body !^body
+    ]
+
+    try
+        let! res = Fetch.fetch "/api/orders" props
+        let! txt = res.text()
+        return txt
+    with _ ->
+        return! failwithf "Could not post orders."
+}
+
 let loadOrderIDsCmd = Cmd.OfPromise.perform initialOrderIDs () InitialOrderIDsLoaded
 
 let init () : Model * Cmd<Msg> =
-    let initialModel = { OrderIDs = List.empty; SecretString = ""; Token = ""; }
+    let initialModel = { OrderIDs = List.empty; SecretString = "SECRET_STRING"; JsonOrderIDs = ""; Token = ""; }
     initialModel, loadOrderIDsCmd
 
 let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
@@ -73,6 +100,12 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
     | Authed token ->
         let nextModel = { currentModel with Token = token.Token }
         nextModel, Cmd.none
+    | SetOrderIds jsonOrderIds ->
+        let nextModel = { currentModel with JsonOrderIDs = jsonOrderIds }
+        nextModel, Cmd.none
+    | AddOrderIds ->
+        let nextModel = { currentModel with JsonOrderIDs = "" }
+        nextModel, Cmd.OfPromise.either postOrders (currentModel.Token, currentModel.JsonOrderIDs) AddedOrdersIds Error
     | _ -> currentModel, Cmd.none
 
 
@@ -88,6 +121,12 @@ let view (model : Model) (dispatch : Msg -> unit) =
                 div [ Style [ CSSProp.FontSize "9pt" ] ] [ b [] [ str "JWT" ] ]
                 div [ Style [ CSSProp.TextAlign TextAlignOptions.Center ] ] [ i [ Style [ CSSProp.WordBreak "break-all" ] ] [ if model.Token.Length = 0 then str "Not Auth" else str model.Token ] ]
             ]
+        ]
+        br []
+        div [] [
+            span [] [ str "JSON OrderIDs (ex. \"123\", \"345\") - " ]
+            input [ Size 50.0; Value model.JsonOrderIDs; OnChange (fun e -> e.Value |> SetOrderIds |> dispatch) ]
+            button [ Style [ CSSProp.MarginLeft "0.1rem" ]; OnClick (fun e -> AddOrderIds |> dispatch) ] [ str "POST" ]
         ]
         br []
         div [] [
