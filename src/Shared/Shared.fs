@@ -1,5 +1,13 @@
 namespace Shared
 
-type Counter = { Value : int }
+type OrderIDsList = {
+    OrderIDs: string list
+}
 
+type Auth = {
+    AUTHSTR: string
+}
 
+type AuthData = {
+    Token: string
+}

@@ -5,29 +5,17 @@ open Elmish.React
 open Fable.React
 open Fable.React.Props
 open Fable.Core.JsInterop
-open Fetch.Types
-open Thoth.Fetch
-open Fulma
-open Thoth.Json
-open Fable.Core
 open Fable.FontAwesome
+open Fetch.Types
+open Fulma
+open Thoth.Fetch
+open Thoth.Json
+open Shared
 
 type Model = {
     OrderIDs: string list
     SecretString: string
     JsonOrderIDs: string
-    Token: string
-}
-
-type OrderIDsList = {
-    OrderIDs: string list
-}
-
-type Auth = {
-    AUTHSTR: string
-}
-
-type AuthData = {
     Token: string
 }
 
